@@ -25,6 +25,8 @@ from rdkit import Chem
 from rdkit.Chem import Descriptors
 from rdkit.Chem import AllChem
 from rdkit import DataStructs
+from rdkit.Chem import Draw
+from rdkit.Chem import rdFMCS
 from rdkit.Chem.rdMolDescriptors import GetMorganFingerprintAsBitVect
 from torch.utils import data
 from torch_geometric.data import Data
@@ -33,6 +35,8 @@ from torch_geometric.data import Batch
 from itertools import repeat, product, chain
 import torch
 import random
+import bioalerts
+from bioalerts import LoadMolecules, Alerts, FPCalculator
 
 allowable_features = {
     'possible_atomic_num_list' : list(range(1, 119)),
@@ -65,6 +69,55 @@ allowable_features = {
     ]
 }
 
+def SmilesMCStoGridImage(smiles, align_substructure = False, verbose = True, **kwargs):
+     """
+     Convert a list (or dictionary) of SMILES strings to an RDKit grid image of the maximum common substructure (MCS) match between them
+
+     :returns: RDKit grid image, and (if verbose=True) MCS SMARTS string and molecule, and list of molecules for input SMILES strings
+     :rtype: RDKit grid image, and (if verbose=True) string, molecule, and list of molecules
+     :param molecules: The SMARTS molecules to be compared and drawn
+     :type molecules: List of (SMARTS) strings, or dictionary of (SMARTS) string: (legend) string pairs
+     :param align_substructure: Whether to align the MCS substructures when plotting the molecules; default is True
+     :type align_substructure: boolean
+     :param verbose: Whether to return verbose output (MCS SMARTS string and molecule, and list of molecules for input SMILES strings); default is False so calling this function will present a grid image automatically
+     :type verbose: boolean
+     """
+     mols = [Chem.MolFromSmiles(smile) for smile in smiles]
+     res = rdFMCS.FindMCS(mols, **kwargs)
+     mcs_smarts = res.smartsString
+     mcs_mol = Chem.MolFromSmarts(res.smartsString)
+     smarts = res.smartsString
+     smart_mol = Chem.MolFromSmarts(smarts)
+     smarts_and_mols = [smart_mol] + mols
+
+     smarts_legend = "Max. substructure match"
+
+     # If user supplies a dictionary, use the values as legend entries for molecules
+     if isinstance(smiles, dict):
+          mol_legends = [smiles[molecule] for molecule in smiles]
+     else:
+          mol_legends = ["" for mol in mols]
+
+     legends =  [smarts_legend] + mol_legends
+    
+     matches = [""] + [mol.GetSubstructMatch(mcs_mol) for mol in mols]
+
+     subms = [x for x in smarts_and_mols if x.HasSubstructMatch(mcs_mol)]
+
+     Chem.rdDepictor.Compute2DCoords(mcs_mol)
+
+     if align_substructure:
+          for m in subms:
+               _ = Chem.rdDepictor.GenerateDepictionMatching2DStructure(m, mcs_mol)
+
+     drawing = Draw.MolsToGridImage(smarts_and_mols, highlightAtomLists=matches, legends=legends)
+     drawing.save('submol.png')
+     
+     if verbose:
+          return drawing, mcs_smarts, mcs_mol, mols
+     else:
+          return drawing
+
 def check_int(s):
     if s[0] in ('-', '+'):
         return s[1:].isdigit()
@@ -82,7 +135,7 @@ def random_sampler(D, d, t, k, n, train):
     s_neg = random.sample(range(data[t][0],len(D)), k)
     s = s_pos + s_neg
     random.shuffle(s)
-
+    
     samples = [i for i in range(0, len(D)) if i not in s]
     
     if train == True:     
@@ -90,11 +143,17 @@ def random_sampler(D, d, t, k, n, train):
     else:
         random.shuffle(samples)
         q = samples
-
+ 
     S = D[torch.tensor(s)]
     Q = D[torch.tensor(q)]
-
-    return S, Q
+    
+    smiles_s = [D.smiles_list[i] for i in s]
+    smiles_q = [D.smiles_list[i] for i in q]
+    
+    print(len(S))
+    print(len(smiles_s))
+    
+    return S, Q, smiles_s, smiles_q
 
 
 def split_into_directories(data):
@@ -110,11 +169,14 @@ def split_into_directories(data):
     kk = 0
     if data == "muta":
         
+        mcss_SMILES = []
+        mcss_label = []
         for k,j in enumerate(file):
           sample = j.split(",")
           count=0
           smile=""
           sample_processed = []
+          
           for i in range(0,len(sample)):
             if check_int(sample[i]) == False and (sample[i].replace('.','',1).isdigit() or sample[i][1:].replace('.','',1).isdigit()) and count == 0:
               sample_processed = sample[i:]
@@ -172,14 +234,62 @@ def split_into_directories(data):
                     C[i][1]+=1
                 if sample_final[i] == '-1' and i == 5:
                     kk+=1
-  
-                  
+                if (sample_final[i] == '0' or sample_final[i] == '1') and i == 5:
+                    mcss_SMILES.append(smile)   
+                    mcss_label.append(sample_final[i])
+        
+        
+        with open("sa_overall.smi", 'w') as f:
+            f.write("\n".join(str(i) for i in mcss_SMILES))
+        
+        with open("sa_overall.bio", 'w') as f:
+            f.write("\n".join(str(i) for i in mcss_label))
+            
+        #drawing, mcs_smarts, mcs_mol, mols = SmilesMCStoGridImage(mcss_SMILES[:20])
+        molecules = bioalerts.LoadMolecules.LoadMolecules("sa_overall.smi",name_field=None)
+        molecules.ReadMolecules()
+        
+        mol_bio = np.genfromtxt('sa_overall.bio')
+        arr = np.arange(0,len(mol_bio))
+        mask = np.ones(arr.shape,dtype=bool)
+        mask[molecules.molserr]=0
+        mol_bio = mol_bio[mask]
+        print(len(mol_bio))
+        print(len(molecules.mols))
+        
+        stride = int(len(molecules.mols) * 0.9)
+        training = molecules.mols[0:stride]
+        test = molecules.mols[stride:len(molecules.mols)]
+        print(len(molecules.mols), len(test), len(training))
+        
+        bio_training = mol_bio[0:stride]
+        bio_test = mol_bio[stride:len(molecules.mols)]
+        print(len(mol_bio), len(bio_test), len(bio_training))
+        
+        training_dataset_info = bioalerts.LoadMolecules.GetDataSetInfo(name_field=None)
+        training_dataset_info.extract_substructure_information(radii=[2,3,4],mols=training)
+        
+        Alerts_categorical = bioalerts.Alerts.CalculatePvaluesCategorical(max_radius=4)
+
+        Alerts_categorical.calculate_p_values(mols=test,
+                                              substructure_dictionary=training_dataset_info.substructure_dictionary,
+                                              bioactivities=bio_training,
+                                              mols_ids=training_dataset_info.mols_ids[0:stride],
+                                              threshold_nb_substructures = 50,
+                                              threshold_pvalue = 0.05,
+                                              threshold_frequency = 0.7,
+                                              Bonferroni=True)
+        
+        Alerts_categorical.XlSXOutputWriter(Alerts_categorical.output, 
+                                            'sa_overall.xlsx')
+        
         print(kk)
         #print(T)
         print(C)
-
+        
+        
         for t in T:
-            d = 'drive/MyDrive/LuisTorres_colab/FS-GNNTR/Data/' + data + "/pre-processed/" + "task_" +str(t+1)
+            d = 'Data/' + data + "/pre-processed/" + "task_" +str(t+1)
             os.makedirs(d, exist_ok=True)
             os.makedirs(d + "/raw", exist_ok=True)
             os.makedirs(d + "/processed", exist_ok=True)
@@ -265,7 +375,7 @@ class MoleculeDataset(InMemoryDataset):
         self.transform, self.pre_transform, self.pre_filter = transform, pre_transform, pre_filter
 
         if not empty:
-            self.data, self.slices = torch.load(self.processed_paths[0])
+            self.data, self.slices, self.smiles_list = torch.load(self.processed_paths[0])
 
 
     def get(self, idx):
@@ -276,6 +386,7 @@ class MoleculeDataset(InMemoryDataset):
             s[data.__cat_dim__(key, item)] = slice(slices[idx],
                                                     slices[idx + 1])
             data[key] = item[s]
+        
         return data
 
 
@@ -299,9 +410,9 @@ class MoleculeDataset(InMemoryDataset):
              smiles_list, rdkit_mol_objs, labels = \
                  _load_muta_dataset(self.raw_paths[0])
              for i in range(len(smiles_list)):
-                 print(i)
+                 #print(i)
                  rdkit_mol = rdkit_mol_objs[i]
-                 print(smiles_list[i])
+                 #print(smiles_list[i])
                  data = mol_to_graph_data_obj_simple(rdkit_mol)
                  # manually add mol id
                  data.id = torch.tensor(
@@ -310,11 +421,11 @@ class MoleculeDataset(InMemoryDataset):
                  data.y = torch.tensor(labels[i, :])
                  data_list.append(data)
                  data_smiles_list.append(smiles_list[i])
-
-
+            
         else:
             raise ValueError('Invalid dataset name')
-
+        
+        
         if self.pre_filter is not None:
             data_list = [data for data in data_list if self.pre_filter(data)]
 
@@ -327,7 +438,7 @@ class MoleculeDataset(InMemoryDataset):
                                   header=False)
 
         data, slices = self.collate(data_list)
-        torch.save((data, slices), self.processed_paths[0])
+        torch.save((data, slices, data_smiles_list), self.processed_paths[0])
 
 
 def merge_dataset_objs(dataset_1, dataset_2):
@@ -403,8 +514,32 @@ def _load_muta_dataset(input_path):
     labels = np.zeros((len(smiles_list),1), dtype=int)
     labels[len(binary_list[0]):,0] = 1 
     
+    
+
     return smiles_list, rdkit_mol_objs_list, labels
 
+
+def _load_muta_dataset(input_path):
+    """
+    :param input_path:
+    :return: list of smiles, list of rdkit mol obj, np.array containing the
+    labels
+    """
+    with open(input_path, 'rb') as f:
+       binary_list = pickle.load(f)
+
+    print(binary_list)
+    smiles_list = []
+    for l in binary_list:
+        for i in l:
+            smiles_list.append(i)
+    
+    print(smiles_list)
+    rdkit_mol_objs_list = [AllChem.MolFromSmiles(s) for s in smiles_list]
+    labels = np.zeros((len(smiles_list),1), dtype=int)
+    labels[len(binary_list[0]):,0] = 1 
+
+    return smiles_list, rdkit_mol_objs_list, labels
 
 def check_smiles_validity(smiles):
     try:
@@ -455,4 +590,4 @@ def dataset(data):
 if __name__ == "__main__":
     # split data in mutiple data directories and convert to RDKit.Chem graph structures
     split_into_directories("muta")
-    #dataset("muta")
+    dataset("muta")

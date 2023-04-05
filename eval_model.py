@@ -1,4 +1,5 @@
 import torch
+#from sa_eval import GNNTR_eval
 from gnntr_eval import GNNTR_eval
 import statistics
 
@@ -6,7 +7,6 @@ def save_ckp(state, is_best, checkpoint_dir, filename):
     
     f_path = checkpoint_dir + filename
     torch.save(state, f_path)
-
 
 def save_result(epoch, N, exp, filename):
             
@@ -24,13 +24,13 @@ def save_result(epoch, N, exp, filename):
 
 
 dataset = "muta"
-gnn= "gin" #gin, graphsage, gcn
+gnn = "gin" #gin, graphsage, gcn
 support_set = 10
 pretrained = "pre-trained/supervised_contextpred.pth"
 baseline = 0
 device = "cuda:0"
 
-# Ames-FS-GNNTR - Two module GNN-Transformer architecture for Ames mutagenicity prediction
+# Meta-GTMP - Two module GNN-Transformer architecture for Ames mutagenicity prediction
 # GraphSAGE
 # GIN - Graph Isomorphism Network
 # GCN - Standard Graph Convolutional Network

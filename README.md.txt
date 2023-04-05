@@ -1,6 +1,6 @@
 ## Few-shot Learning with Transformers via Graph Embeddings for Ames Mutagenicity Prediction
 
-In this work, we introduce a few-shot GNN-Transformer, to predict the mutagenicity of a small amount of labeled molecules based on the results achieved for each individual strain involved in the Ames test. A two-module multi-task meta-learning framework combines the information of multiple mutagenic properties across few-shot tasks to leverage the complementarity among individual strains to model the overall Ames mutagenicity test result with limited available data. 
+In this work, we introduce a few-shot GNN-Transformer, Meta-GTMP to predict the mutagenicity of a small amount of labeled molecules based on the results achieved for each individual strain involved in the Ames test. A two-module multi-task meta-learning framework combines the information of multiple mutagenic properties across few-shot tasks to leverage the complementarity among individual strains to model the overall Ames mutagenicity test result with limited available data. 
 
 First, a GNN treats molecules as a set of node and edge features converted into graph embeddings by neighborhood aggregation. Then, a Transformer encoder preserves the global information in these vectorial embeddings to propagate deep representations across attention layers. The long-range dependencies captured express the global-semantic structure of molecular embeddings as a function to predict mutagenic properties in small drug repositories. It is demonstrated that this hybrid approach achieves a superior performance when predicting the overall Ames mutagenicity result over standard graph-based methods.
 
@@ -51,6 +51,7 @@ We used the following Python packages for core development. We tested on Python 
 - pandas = 1.4.1
 - networkx = 2.7.1
 - rdkit
+- bioalerts
 ```
 
 ## References
@@ -103,6 +104,23 @@ We used the following Python packages for core development. We tested on Python 
   publisher = {GitHub},
   journal = {GitHub repository},
   howpublished = {\url{https://github.com/lucidrains/vit-pytorch}}
+}
+
+
+```
+[5] Bioalerts: A python library for the derivation of structural alerts from bioactivity and toxicity data sets.
+
+```
+@misc{Isidro Cortes-Ciriano2016,
+   author = {Isidro Cortes-Ciriano},
+   journal = {Journal of Cheminformatics},
+   month = {3},
+   title = {Bioalerts: A python library for the derivation of structural alerts from bioactivity and toxicity data sets},
+   doi = {10.1186/s13321-016-0125-7},
+   year = {2016},
+   publisher = {BioMed Central Ltd.},
+   journal = {Journal of Cheminformatics},
+  }
 }
 
 ```
