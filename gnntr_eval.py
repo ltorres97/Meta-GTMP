@@ -10,8 +10,11 @@ import numpy as np
 from sklearn.metrics import roc_auc_score, f1_score, precision_score, recall_score, confusion_matrix, accuracy_score, balanced_accuracy_score
 from torch.nn.utils.convert_parameters import vector_to_parameters, parameters_to_vector
 import matplotlib.pyplot as plt
+from matplotlib import cm
 import pandas as pd
 import seaborn as sns
+from sklearn.manifold import TSNE
+#from tsnecuda import TSNE
 import statistics
 
 def optimizer_to(optim, device):
@@ -105,6 +108,50 @@ def parse_pred(logit):
     
     return pred
 
+def plot_tsne(nodes, labels, t):
+    
+    #Plot t-SNE visualizations
+    
+    l = ["Meta-GTMP-5-shot"]
+    labels_list =  l
+    t+=1
+    emb_tsne = np.asarray(nodes)
+    y_tsne = np.asarray(labels).flatten()
+      
+    c_dict = {'Mutagenic': '#ff7f0e','Non-Mutagenic': '#1f77b4' }
+    c = ["#ff8100","#fb9b50","#ffb347","#9fc0de","#0466c8", "#023e7d"]
+    z = TSNE(n_components=2, init='random').fit_transform(emb_tsne)
+    label_vals = {0: 'Non-Mutagenic', 1: 'Mutagenic'}
+    print(y_tsne.size)
+    print(z.size)
+    tsne_result_df = pd.DataFrame({'tsne_dim_1': z[:,0], 'tsne_dim_2': z[:,1], 'label': y_tsne})
+    tsne_result_df['label'] = tsne_result_df['label'].map(label_vals)
+    fig, ax = plt.subplots(1)
+    
+    m_colors = ["blue", "red"]
+    for (lab, group), col in zip(tsne_result_df.groupby("label"), m_colors):
+       ax.scatter(group.tsne_dim_1, group.tsne_dim_2, edgecolors=col, facecolors="white", alpha = 1, s = 5, linewidth = 0.4, label=lab)
+    
+    lim = (z.min()-5, z.max()+5)
+    ax.set_xlim(lim)
+    ax.set_ylim(lim)
+    ax.set_aspect('equal') 
+    #fig.set_figwidth(6.5)
+    #fig.set_figheight(3.5)
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles[:2], labels[:2], bbox_to_anchor=(1, 0.02), loc='lower right')
+    ax.set_title("Meta-GTMP")
+    ax.set(xlabel="Dimension 1")
+    ax.set(ylabel="Dimension 2")
+    ax.tick_params(bottom=True) 
+    ax.tick_params(left=True)
+    plt.grid(False)
+    plt.savefig('plots/'+labels_list[t-1], dpi=600, bbox_inches='tight')
+    plt.show()
+    plt.close(fig)
+    
+    return t
+
 
 class GNNTR_eval(nn.Module):
     def __init__(self, dataset, gnn, support_set, pretrained, baseline):
@@ -143,13 +190,13 @@ class GNNTR_eval(nn.Module):
         self.gnn.to(torch.device("cuda:0"))
         
         if self.baseline == 0:
-            self.ckp_path_gnn = "checkpoints/checkpoints-GT/FS-GNNTR_GNN_muta_10.pt"
-            self.ckp_path_transformer = "checkpoints/checkpoints-GT/FS-GNNTR_Transformer_muta_10.pt"
+            self.ckp_path_gnn = "checkpoints/checkpoints-GT/FS-GNNTR_GNN_muta_5.pt"
+            self.ckp_path_transformer = "checkpoints/checkpoints-GT/FS-GNNTR_Transformer_muta_5.pt"
         elif self.baseline == 1:
-            self.ckp_path_gnn = "checkpoints/checkpoints-baselines/GIN/GIN_GNN_muta_10.pt"
+            self.ckp_path_gnn = "checkpoints/checkpoints-baselines/GIN/GIN_GNN_muta_5.pt"
 
         self.gnn, self.opt, start_epoch = load_ckp(self.ckp_path_gnn, self.gnn, self.opt)
-        #self.transformer, self.meta_opt, start_epoch = load_ckp(self.ckp_path_transformer, self.transformer, self.meta_opt)
+        self.transformer, self.meta_opt, start_epoch = load_ckp(self.ckp_path_transformer, self.transformer, self.meta_opt)
             
     def update_graph_params(self, loss, lr_update):
         grads = torch.autograd.grad(loss, self.gnn.parameters())
@@ -236,7 +283,7 @@ class GNNTR_eval(nn.Module):
                 
                 y_pred.append(pred)   
                 
-            #t = plot_tsne(nodes, labels, t)
+            t = plot_tsne(nodes, labels, t)
              
             roc_scores, f1_scores, p_scores, sn_scores, sp_scores, acc_scores, bacc_scores  = metrics(roc_scores, f1_scores, p_scores, sn_scores, sp_scores, acc_scores, bacc_scores, y_label, y_pred)
             

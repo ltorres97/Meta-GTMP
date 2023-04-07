@@ -36,7 +36,7 @@ from itertools import repeat, product, chain
 import torch
 import random
 import bioalerts
-from bioalerts import LoadMolecules, Alerts, FPCalculator
+#from bioalerts import LoadMolecules, Alerts, FPCalculator
 
 allowable_features = {
     'possible_atomic_num_list' : list(range(1, 119)),
@@ -153,7 +153,7 @@ def random_sampler(D, d, t, k, n, train):
     print(len(S))
     print(len(smiles_s))
     
-    return S, Q, smiles_s, smiles_q
+    return S, Q#, smiles_s, smiles_q
 
 
 def split_into_directories(data):

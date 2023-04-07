@@ -12,7 +12,6 @@ from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 import torch.nn.functional as F
 import math
-from vit_pytorch.vit import Transformer
 
 
 def pair(t):
