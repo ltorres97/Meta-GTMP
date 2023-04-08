@@ -87,7 +87,7 @@ for epoch in range(1, 10000):
             bacc[i] = bacc_scores[i]
             is_best = True
 
-    filename = "results-exp/train-FS-GNNTR-muta-10.txt"
+    filename = "results-exp/train-Meta-GTMP-muta-10.txt"
     file = open(filename, "a")
     file.write("[ROC-AUC, F1-score, Precision, Sensitivity, Specificity, Accuracy, Balanced Accuracy]:\t")
     #file.write(str(exp))
@@ -97,8 +97,8 @@ for epoch in range(1, 10000):
     file.close()
     
     #if baseline == 0:
-     # save_ckp(checkpoint_gnn, is_best, checkpoint_dir, "/FS-GNNTR_GNN_muta_10.pt")
-      #save_ckp(checkpoint_transformer, is_best, checkpoint_dir, "/FS-GNNTR_Transformer_muta_10.pt")
+     # save_ckp(checkpoint_gnn, is_best, checkpoint_dir, "/Meta-GTMP_GNN_muta_10.pt")
+      #save_ckp(checkpoint_transformer, is_best, checkpoint_dir, "/Meta-GTMP_Transformer_muta_10.pt")
 
     #if baseline == 1:
      #   save_ckp(checkpoint_gnn, is_best, checkpoint_dir, "/GraphSAGE_GNN_muta_10.pt")

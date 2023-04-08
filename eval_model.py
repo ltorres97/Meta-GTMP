@@ -70,13 +70,13 @@ for epoch in range(1, 10000):
       bacc.append(round(bacc_scores,4))
     
     """
-    save_result(epoch, N, roc, "results-exp/Ames-FS-GNNTR/roc-FS-GNNTR_muta_10.txt")
-    save_result(epoch, N, f1s, "results-exp/Ames-FS-GNNTR/f1s-FS-GNNTR_muta_10.txt")
-    save_result(epoch, N, prs, "results-exp/Ames-FS-GNNTR/prs-FS-GNNTR_muta_10.txt")
-    save_result(epoch, N, sns, "results-exp/Ames-FS-GNNTR/sns-FS-GNNTR_muta_10.txt")
-    save_result(epoch, N, sps, "results-exp/Ames-FS-GNNTR/sps-FS-GNNTR_muta_10.txt")
-    save_result(epoch, N, acc, "results-exp/Ames-FS-GNNTR/acc-FS-GNNTR_muta_10.txt")
-    save_result(epoch, N, bacc, "results-exp/Ames-FS-GNNTR/bacc-FS-GNNTR_muta_10.txt")
+    save_result(epoch, N, roc, "results-exp/Ames-Meta-GTMP/roc-Meta-GTMP_muta_10.txt")
+    save_result(epoch, N, f1s, "results-exp/Ames-Meta-GTMP/f1s-Meta-GTMP_muta_10.txt")
+    save_result(epoch, N, prs, "results-exp/Ames-Meta-GTMP/prs-Meta-GTMP_muta_10.txt")
+    save_result(epoch, N, sns, "results-exp/Ames-Meta-GTMP/sns-Meta-GTMP_muta_10.txt")
+    save_result(epoch, N, sps, "results-exp/Ames-Meta-GTMP/sps-Meta-GTMP_muta_10.txt")
+    save_result(epoch, N, acc, "results-exp/Ames-Meta-GTMP/acc-Meta-GTMP_muta_10.txt")
+    save_result(epoch, N, bacc, "results-exp/Ames-Meta-GTMP/bacc-Meta-GTMP_muta_10.txt")
     """
 
     

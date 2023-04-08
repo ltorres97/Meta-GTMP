@@ -80,7 +80,7 @@ fig.set_figheight(3.5)
 handles, labels = ax.get_legend_handles_labels()
 ax.legend(handles[:4], labels[:4], bbox_to_anchor=(1, 1.02), loc='upper left')
 sns.move_legend(ax, "lower center", bbox_to_anchor=(.5, 1), ncol=4, title=None, frameon=False, fontsize=10)
-plt.savefig('boxplot_metrics_ames_5.png', dpi=600, bbox_inches='tight')
+plt.savefig('boxplot_metrics_ames_5.png', dpi=2000, bbox_inches='tight')
 
 
 dd=pd.melt(df_final,id_vars=['Metric'],value_vars=['GIN','GCN','GraphSAGE','Meta-GTMP (GIN+TR)'],var_name='Models')
@@ -175,7 +175,7 @@ fig.set_figheight(3.5)
 handles, labels = ax.get_legend_handles_labels()
 ax.legend(handles[:4], labels[:4], bbox_to_anchor=(1, 1.02), loc='upper left')
 sns.move_legend(ax, "lower center", bbox_to_anchor=(.5, 1), ncol=4, title=None, frameon=False, fontsize=10)
-plt.savefig('boxplot_metrics_ames_10.png', dpi=600, bbox_inches='tight')
+plt.savefig('boxplot_metrics_ames_10.png', dpi=2000, bbox_inches='tight')
 
 dd=pd.melt(df_final,id_vars=['Metric'],value_vars=['GIN','GCN','GraphSAGE','Meta-GTMP (GIN+TR)'],var_name='Models')
 fig, ax = plt.subplots()
@@ -267,7 +267,7 @@ fig.set_figheight(3.5)
 handles, labels = ax.get_legend_handles_labels()
 ax.legend(handles[:6], labels[:6], bbox_to_anchor=(1, 1.05), loc='upper left')
 sns.move_legend(ax, "lower center", bbox_to_anchor=(.5, 1.05), ncol=6, title=None, frameon=False, fontsize=10)
-plt.savefig('boxplot_ST_models.png', dpi=600, bbox_inches='tight')
+plt.savefig('boxplot_ST_models.png', dpi=2000, bbox_inches='tight')
 
 
 """
@@ -351,44 +351,6 @@ sns.move_legend(ax, "lower center", bbox_to_anchor=(.5, 1), ncol=4, title=None, 
 plt.savefig('boxplot_Ames-FS-GNNTR.png', dpi=300, bbox_inches='tight')
 
 """
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 """
 df = pd.DataFrame({'Task': ['R.U.D.','R.U.D.','R.U.D.','R.U.D.','R.U.D.','R.U.D.','R.U.D.','R.U.D.','R.U.D.','R.U.D.', 'R.U.D.','R.U.D.','R.U.D.','R.U.D.','R.U.D.','R.U.D.','R.U.D.','R.U.D.','R.U.D.','R.U.D.', 'R.U.D.','R.U.D.','R.U.D.','R.U.D.','R.U.D.','R.U.D.','R.U.D.','R.U.D.','R.U.D.','R.U.D.'],\

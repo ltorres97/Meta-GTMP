@@ -1,4 +1,4 @@
-## Few-shot Learning with Transformers via Graph Embeddings for Ames Mutagenicity Prediction
+## Meta-GTMP: a few-shot GNN-Transformer approach for Ames mutagenicity prediction
 
 In this work, we introduce a few-shot GNN-Transformer, Meta-GTMP to predict the mutagenicity of a small amount of labeled molecules based on the results achieved for each individual strain involved in the Ames test. A two-module multi-task meta-learning framework combines the information of multiple mutagenic properties across few-shot tasks to leverage the complementarity among individual strains to model the overall Ames mutagenicity test result with limited available data. 
 
@@ -68,33 +68,21 @@ We used the following Python packages for core development. We tested on Python 
 }
 
 ```
-
-[2] Finn, C., Abbeel, P., Levine, S.: Model-agnostic meta-learning for fast adaptation of deep networks. In: 34th International Conference on Machine Learning, ICML 2017, vol. 3 (2017). https://doi.org/10.48550/arXiv.1703.03400
+[2] Romualdo Benigni, Chiara Laura Battistelli, Cecilia Bossa,
+Olga Tcheremenskaia, and Pierre Crettaz. Istituto
+superiore di sanit`a: Isstox chemical toxicity databases,
+2019. https://doi.org/10.1093/mutage/get016
 
 ```
-@article{finn17maml,
-  author    = {Chelsea Finn and Pieter Abbeel and Sergey Levine},
-  title     = {{Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks}},
-  journal   = {International Conference on Machine Learning (ICML)},
-  year      = {2017},
-  url       = {http://arxiv.org/abs/1703.03400}
+@article{Benigni2019,
+   author = {Romualdo Benigni and Chiara Laura Battistelli and Cecilia Bossa and Olga Tcheremenskaia and Pierre Crettaz},
+   url = {https://www.iss.it/isstox},
+   title = {Istituto Superiore di Sanità: ISSTOX Chemical Toxicity Databases},
+   year = {2019},
 }
 
 ```
-[3] Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., Uszkoreit, J., Houlsby, N. (2020). An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale. https://doi.org/10.48550/arxiv.2010.11929
-
-```
-@article{Dosovitskiy2020,
-   author = {Alexey Dosovitskiy and Lucas Beyer and Alexander Kolesnikov and Dirk Weissenborn and Xiaohua Zhai and Thomas Unterthiner and Mostafa Dehghani and Matthias Minderer and Georg Heigold and Sylvain Gelly and Jakob Uszkoreit and Neil Houlsby},
-   doi = {10.48550/arxiv.2010.11929},
-   month = {10},
-   title = {An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale},
-   url = {https://arxiv.org/abs/2010.11929},
-   year = {2020},
-}
-
-```
-[4] Vision Transformers with PyTorch. https://github.com/lucidrains/vit-pytorch
+[3] Vision Transformers with PyTorch. https://github.com/lucidrains/vit-pytorch
 
 ```
 @misc{Phil Wang,
@@ -108,7 +96,7 @@ We used the following Python packages for core development. We tested on Python 
 
 
 ```
-[5] Bioalerts: A python library for the derivation of structural alerts from bioactivity and toxicity data sets.
+[4] Bioalerts: A python library for the derivation of structural alerts from bioactivity and toxicity data sets.
 
 ```
 @misc{Isidro Cortes-Ciriano2016,
