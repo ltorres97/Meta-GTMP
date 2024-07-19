@@ -10,12 +10,8 @@ import numpy as np
 from sklearn.metrics import roc_auc_score, f1_score, precision_score, recall_score, confusion_matrix, accuracy_score, balanced_accuracy_score
 from torch.nn.utils.convert_parameters import vector_to_parameters, parameters_to_vector
 import matplotlib.pyplot as plt
-from matplotlib import cm
 import pandas as pd
-import seaborn as sns
 from sklearn.manifold import TSNE
-#from tsnecuda import TSNE
-import statistics
 
 def optimizer_to(optim, device):
     # move optimizer to device
@@ -44,10 +40,10 @@ def load_ckp(checkpoint_fpath, model, optimizer):
 
     return model, optimizer, checkpoint['epoch']
 
-def sample_test(tasks, test_task, data, batch_size, n_support, n_query):
+def sample_test(tasks, test_task, data, batch_size, n_support, n_query, exp):
     
     dataset = MoleculeDataset("Data/" + data + "/pre-processed/task_" + str(tasks-test_task), dataset = data)
-    support_dataset, query_dataset = random_sampler(dataset, data, tasks-test_task-1, n_support, n_query, train=False)
+    support_dataset, query_dataset = random_sampler(dataset, data, tasks-test_task-1, n_support, n_query, train=False, seed=exp+1) # random seed = exp + 1
     support_set = DataLoader(support_dataset, batch_size=batch_size, shuffle=False, num_workers = 0, drop_last=True)
     query_set = DataLoader(query_dataset, batch_size=batch_size, shuffle=False, num_workers = 0, drop_last = True)
     
@@ -117,7 +113,12 @@ def plot_tsne(nodes, labels, t):
     t+=1
     emb_tsne = np.asarray(nodes)
     y_tsne = np.asarray(labels).flatten()
-      
+    
+    # Check the shapes to ensure they are compatible
+    assert emb_tsne.ndim == 2, f"emb_tsne should be 2-dimensional, but got {emb_tsne.ndim} dimensions"
+    assert y_tsne.ndim == 1, f"y_tsne should be 1-dimensional, but got {y_tsne.ndim} dimensions"
+    assert emb_tsne.shape[0] == y_tsne.shape[0], f"Number of samples in emb_tsne ({emb_tsne.shape[0]}) and y_tsne ({y_tsne.shape[0]}) should match"
+     
     c_dict = {'Mutagenic': '#ff7f0e','Non-Mutagenic': '#1f77b4' }
     c = ["#ff8100","#fb9b50","#ffb347","#9fc0de","#0466c8", "#023e7d"]
     z = TSNE(n_components=2, init='random').fit_transform(emb_tsne)
@@ -139,7 +140,7 @@ def plot_tsne(nodes, labels, t):
     #fig.set_figwidth(6.5)
     #fig.set_figheight(3.5)
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles[:2], labels[:2], bbox_to_anchor=(1, 0.02), loc='lower right')
+    #ax.legend(handles[:2], labels[:2], bbox_to_anchor=(1, 0.02), loc='lower right')
     ax.set_title("Meta-GTMP")
     ax.set(xlabel="Dimension 1")
     ax.set(ylabel="Dimension 2")
@@ -178,9 +179,13 @@ class GNNTR_eval(nn.Module):
         self.gnn = GNN_prediction(self.graph_layers, self.emb_size, jk = "last", dropout_prob = 0.5, pooling = "mean", gnn_type = gnn)
         self.transformer = TR(300, (30,1), 1, 128, 5, 5, 256) 
         self.gnn.from_pretrained(pretrained)
-        self.pos_weight = torch.FloatTensor([5]).to(self.device)
-        self.loss_transformer = nn.BCEWithLogitsLoss(pos_weight=self.pos_weight)
-        self.meta_opt = torch.optim.Adam(self.transformer.parameters(), lr=1e-5)
+        if self.baseline == 0:
+            self.pos_weight = torch.FloatTensor([5]).to(self.device)
+            self.loss = nn.BCEWithLogitsLoss(pos_weight=self.pos_weight)
+            self.loss_transformer = nn.BCEWithLogitsLoss(pos_weight=self.pos_weight)
+        if self.baseline == 1:
+            self.loss = nn.BCEWithLogitsLoss()
+        self.meta_opt = torch.optim.Adam(self.transformer.parameters(), lr=1e-4, weight_decay=0)
 
         graph_params = []
         graph_params.append({"params": self.gnn.gnn.parameters()})
@@ -188,21 +193,38 @@ class GNNTR_eval(nn.Module):
         
         self.opt = optim.Adam(graph_params, lr=self.learning_rate, weight_decay=0) 
         self.gnn.to(torch.device("cuda:0"))
+        self.transformer.to(torch.device("cuda:0"))
         
         if self.baseline == 0:
             self.ckp_path_gnn = "checkpoints/checkpoints-GT/Meta-GTMP_GNN_muta_5.pt"
             self.ckp_path_transformer = "checkpoints/checkpoints-GT/Meta-GTMP_Transformer_muta_5.pt"
+            
+            #self.ckp_path_gnn = "checkpoints/checkpoints-ST/TA98/ST1-Meta-GTMP_GNN_muta_5.pt"
+            #self.ckp_path_transformer = "checkpoints/checkpoints-ST/TA98/ST1-Meta-GTMP_Transformer_muta_5.pt"
+            
+            self.gnn, self.opt, start_epoch = load_ckp(self.ckp_path_gnn, self.gnn, self.opt)
+            self.transformer, self.meta_opt, start_epoch = load_ckp(self.ckp_path_transformer, self.transformer, self.meta_opt)
+                           
         elif self.baseline == 1:
             self.ckp_path_gnn = "checkpoints/checkpoints-baselines/GIN/GIN_GNN_muta_5.pt"
-
-        self.gnn, self.opt, start_epoch = load_ckp(self.ckp_path_gnn, self.gnn, self.opt)
-        self.transformer, self.meta_opt, start_epoch = load_ckp(self.ckp_path_transformer, self.transformer, self.meta_opt)
+            
+            self.gnn, self.opt, start_epoch = load_ckp(self.ckp_path_gnn, self.gnn, self.opt)
             
     def update_graph_params(self, loss, lr_update):
-        grads = torch.autograd.grad(loss, self.gnn.parameters())
-        return parameters_to_vector(grads), parameters_to_vector(self.gnn.parameters()) - parameters_to_vector(grads) * lr_update
+        
+        grads = torch.autograd.grad(loss, self.gnn.parameters(), retain_graph=True, allow_unused=True)
+        used_grads = [grad for grad in grads if grad is not None]
+        
+        return parameters_to_vector(used_grads), parameters_to_vector(self.gnn.parameters()) - parameters_to_vector(used_grads) * lr_update
+    
+    def update_tr_params(self, loss, lr_update):
+       
+        grads_tr = torch.autograd.grad(loss, self.transformer.parameters())
+        used_grads_tr = [grad for grad in grads_tr if grad is not None]
+        
+        return parameters_to_vector(used_grads_tr), parameters_to_vector(self.transformer.parameters()) - parameters_to_vector(used_grads_tr) * lr_update
 
-    def meta_evaluate(self):
+    def meta_evaluate(self, exp):
 
         roc_scores = 0
         f1_scores = 0
@@ -214,11 +236,13 @@ class GNNTR_eval(nn.Module):
 
         t=0
         graph_params = parameters_to_vector(self.gnn.parameters())
+        if self.baseline == 0:
+            tr_params = parameters_to_vector(self.transformer.parameters())
         device = torch.device("cuda:" + str(self.device)) if torch.cuda.is_available() else torch.device("cpu")
         
         for test_task in range(self.test_tasks):
             
-            support_set, query_set = sample_test(self.tasks, test_task, self.data, self.batch_size, self.n_support, self.n_query)
+            support_set, query_set = sample_test(self.tasks, test_task, self.data, self.batch_size, self.n_support, self.n_query, exp)
             self.gnn.eval()
             if self.baseline == 0:
                 self.transformer.eval()
@@ -240,18 +264,16 @@ class GNNTR_eval(nn.Module):
                     
                     if self.baseline == 0:
                         
-                        with torch.no_grad():
-                            val_logit, emb = self.transformer(self.gnn.pool(emb, batch.batch))
-                        
+                        val_logit, emb = self.transformer(self.gnn.pool(emb, batch.batch))
                         loss_tr = self.loss_transformer(F.sigmoid(val_logit).double(), y.to(torch.float64))
                         loss_logits += torch.sum(loss_tr)/val_logit.size(dim=0)
-                          
-                    del graph_pred, emb
                     
                 updated_grad, updated_params = self.update_graph_params(graph_loss, lr_update = self.lr_update)
                 vector_to_parameters(updated_params, self.gnn.parameters())
-            
-            torch.cuda.empty_cache()
+                
+                if self.baseline == 0:
+                    updated_grad_tr, updated_tr_params = self.update_tr_params(loss_logits, lr_update = self.lr_update)
+                    vector_to_parameters(updated_tr_params, self.transformer.parameters())
             
             nodes=[]
             labels=[]
@@ -263,12 +285,13 @@ class GNNTR_eval(nn.Module):
                 
                 with torch.no_grad(): 
                     logit, emb = self.gnn(batch.x, batch.edge_index, batch.edge_attr, batch.batch)
-    
+                    emb = self.gnn.pool(emb, batch.batch)
+                    
                 y_label.append(batch.y.view(logit.shape))
             
                 if self.baseline == 0:
-                    logit, emb = self.transformer(self.gnn.pool(emb, batch.batch))
-                
+                    logit, emb = self.transformer(emb)
+
                 #print(F.sigmoid(logit))
           
                 pred = parse_pred(logit)
@@ -283,10 +306,12 @@ class GNNTR_eval(nn.Module):
                 
                 y_pred.append(pred)   
                 
-            t = plot_tsne(nodes, labels, t)
+            #t = plot_tsne(nodes, labels, t) #t-SNE visualization
              
             roc_scores, f1_scores, p_scores, sn_scores, sp_scores, acc_scores, bacc_scores  = metrics(roc_scores, f1_scores, p_scores, sn_scores, sp_scores, acc_scores, bacc_scores, y_label, y_pred)
             
             vector_to_parameters(graph_params, self.gnn.parameters())
+            if self.baseline == 0:
+                vector_to_parameters(tr_params, self.transformer.parameters())
         
         return [roc_scores, f1_scores, p_scores, sn_scores, sp_scores, acc_scores, bacc_scores], self.gnn.state_dict(), self.transformer.state_dict(), self.opt.state_dict(), self.meta_opt.state_dict() 

@@ -1,0 +1,10 @@
+Molecule_1:Oc1cccc(c1)-c1cccc(O)c1; Pred:0.0; Label:0.0
+Molecule_2:C1=CC(=C(C=C1[N+](=O)[O-])[N+](=O)[O-])NC2=C(C=C(C=C2)[N+](=O)[O-])O; Pred:1.0; Label:1.0
+Molecule_3:C1=C(C=C(C(=C1[N+](=O)[O-])Cl)Cl)[N+](=O)[O-]; Pred:1.0; Label:1.0
+Molecule_4:C1=CC=C(C=C1)CC2=NC(=NC(=N2)N)N; Pred:0.0; Label:0.0
+Molecule_5:C1=CC2=C(C=C1[N+](=O)[O-])C(=O)OC3=C2C=CC(=C3)[N+](=O)[O-]; Pred:1.0; Label:1.0
+Molecule_6:C1OC2=CC=CC(=C2O1)C=O; Pred:0.0; Label:0.0
+Molecule_7:C1=CC(=C(C=C1C2C(C(=O)C3=C(C=C(C=C3O2)O)O)O)O)O; Pred:0.0; Label:0.0
+Molecule_8:C1=CC(=CC=C1C2=CN3C=CSC3=N2)[N+](=O)[O-]; Pred:1.0; Label:1.0
+Molecule_9:Oc1cccc(c1)-c1cccc(O)c1; Pred:0.0; Label:0.0
+Molecule_10:Oc1cccc(c1)-c1cccc(O)c1; Pred:0.0; Label:0.0

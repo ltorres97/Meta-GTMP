@@ -47,14 +47,14 @@ def sample_train(n_tasks, data, batch_size, n_support, n_query):
     
     support_sets = []
     query_sets = []
-    
+    #train_task = 0,1,2,3 or 4  # for ST-models
     for train_task in range(n_tasks):
-         dataset = MoleculeDataset("Data/" + data + "/pre-processed/task_" + str(train_task+1), dataset = data)
-         support_dataset, query_dataset = random_sampler(dataset, data, train_task, n_support, n_query, train=True)
-         support_set = DataLoader(support_dataset, batch_size=batch_size, shuffle=False, num_workers = 0, drop_last = True)
-         query_set = DataLoader(query_dataset, batch_size=batch_size, shuffle=False, num_workers = 0, drop_last = True)
-         support_sets.append(support_set)
-         query_sets.append(query_set)
+        dataset = MoleculeDataset("Data/" + data + "/pre-processed/task_" + str(train_task+1), dataset = data)
+        support_dataset, query_dataset = random_sampler(dataset, data, train_task, n_support, n_query, train=True)
+        support_set = DataLoader(support_dataset, batch_size=batch_size, shuffle=False, num_workers = 0, drop_last = True)
+        query_set = DataLoader(query_dataset, batch_size=batch_size, shuffle=False, num_workers = 0, drop_last = True)
+        support_sets.append(support_set)
+        query_sets.append(query_set)
          
     return support_sets, query_sets
 
@@ -126,7 +126,7 @@ class GNNTR(nn.Module):
         
         if dataset == "muta":
             self.tasks = 6
-            self.train_tasks  = 5
+            self.train_tasks = 5 # for ST-models = 1
             self.test_tasks = 1
             
         self.data = dataset
@@ -141,20 +141,24 @@ class GNNTR(nn.Module):
         self.k_train = 5
         self.k_test = 10
         self.device = 0
-        self.loss = nn.BCEWithLogitsLoss()
         self.gnn = GNN_prediction(self.graph_layers, self.emb_size, jk = "last", dropout_prob = 0.5, pooling = "mean", gnn_type = gnn)
-        self.transformer = TR(300, (30,1), 1, 128, 5, 5, 256) 
+        self.transformer = TR(300, (30,1), 1, 128, 5, 5, 256)  
         self.gnn.from_pretrained(pretrained)
-        self.pos_weight = torch.FloatTensor([5]).to(self.device)
-        self.loss_transformer = nn.BCEWithLogitsLoss(pos_weight=self.pos_weight)
-        self.meta_opt = torch.optim.Adam(self.transformer.parameters(), lr=1e-5)
-        
+        if self.baseline == 0:
+            self.pos_weight = torch.FloatTensor([5]).to(self.device)
+            self.loss = nn.BCEWithLogitsLoss(pos_weight=self.pos_weight)
+            self.loss_transformer = nn.BCEWithLogitsLoss(pos_weight=self.pos_weight)
+        if self.baseline == 1:
+            self.loss = nn.BCEWithLogitsLoss()
+        self.meta_opt = torch.optim.Adam(self.transformer.parameters(), lr=1e-4, weight_decay=0)
+                
         graph_params = []
         graph_params.append({"params": self.gnn.gnn.parameters()})
         graph_params.append({"params": self.gnn.graph_pred_linear.parameters(), "lr":self.learning_rate})
         
         self.opt = optim.Adam(graph_params, lr=self.learning_rate, weight_decay=0) 
         self.gnn.to(torch.device("cuda:0"))
+        self.transformer.to(torch.device("cuda:0"))
         
         if self.baseline == 0:
             self.ckp_path_gnn = "checkpoints/checkpoints-GT/Meta-GTMP_GNN_muta_5.pt"
@@ -166,8 +170,18 @@ class GNNTR(nn.Module):
         #self.transformer, self.meta_opt, start_epoch = load_ckp(self.ckp_path_transformer, self.transformer, self.meta_opt)
 
     def update_graph_params(self, loss, lr_update):
-        grads = torch.autograd.grad(loss, self.gnn.parameters())
-        return parameters_to_vector(grads), parameters_to_vector(self.gnn.parameters()) - parameters_to_vector(grads) * lr_update
+        
+        grads = torch.autograd.grad(loss, self.gnn.parameters(), retain_graph=True, allow_unused=True)
+        used_grads = [grad for grad in grads if grad is not None]
+        
+        return parameters_to_vector(used_grads), parameters_to_vector(self.gnn.parameters()) - parameters_to_vector(used_grads) * lr_update
+    
+    def update_tr_params(self, loss, lr_update):
+       
+        grads_tr = torch.autograd.grad(loss, self.transformer.parameters())
+        used_grads_tr = [grad for grad in grads_tr if grad is not None]
+        
+        return parameters_to_vector(used_grads_tr), parameters_to_vector(self.transformer.parameters()) - parameters_to_vector(used_grads_tr) * lr_update
 
     def meta_train(self):
         self.gnn.train()
@@ -179,6 +193,9 @@ class GNNTR(nn.Module):
         
         for k in range(0, self.k_train):
             graph_params = parameters_to_vector(self.gnn.parameters())
+            if self.baseline == 0:
+                tr_params = parameters_to_vector(self.transformer.parameters())
+            
             query_losses = torch.tensor([0.0]).to(device)
             for t in range(self.train_tasks):
                 
@@ -197,8 +214,6 @@ class GNNTR(nn.Module):
                     support_loss = torch.sum(loss_graph)/graph_pred.size(dim=0)
                     loss_support += support_loss
                     
-                    torch.cuda.empty_cache()    
-                    
                     if self.baseline == 0:
                         pred, emb = self.transformer(self.gnn.pool(emb, batch.batch))
                         loss_tr = self.loss_transformer(F.sigmoid(pred).double(), label.to(torch.float64)) 
@@ -206,11 +221,13 @@ class GNNTR(nn.Module):
                    
                     if self.baseline == 0:
                         inner_losses += inner_loss
-                    
-                    del graph_pred, emb
-                   
+                                       
                 updated_grad, updated_params = self.update_graph_params(loss_support, lr_update = self.lr_update)
                 vector_to_parameters(updated_params, self.gnn.parameters())
+                
+                if self.baseline == 0:
+                    updated_grad_tr, updated_tr_params = self.update_tr_params(inner_losses, lr_update = self.lr_update)
+                    vector_to_parameters(updated_tr_params, self.transformer.parameters())
                 
                 for batch_idx, batch in enumerate(tqdm(query_sets[t], desc="Iteration")):
                     batch = batch.to(device)
@@ -226,8 +243,6 @@ class GNNTR(nn.Module):
                         loss_tr = self.loss_transformer(F.sigmoid(logit).double(), label.to(torch.float64))
                         outer_loss = torch.sum(loss_tr)/logit.size(dim=0) 
                                         
-                    del graph_pred, emb
-                    
                     if self.baseline == 0:
                         outer_losses += outer_loss
               
@@ -241,6 +256,8 @@ class GNNTR(nn.Module):
                         query_outer_losses =  torch.cat((query_outer_losses, outer_losses), 0)
 
                 vector_to_parameters(graph_params, self.gnn.parameters())
+                if self.baseline == 0:
+                    vector_to_parameters(tr_params, self.transformer.parameters())
 
             query_losses = torch.sum(query_losses)
             loss_graph = query_losses / self.train_tasks   
@@ -280,8 +297,10 @@ class GNNTR(nn.Module):
         acc_scores = []
         bacc_scores = []
 
-        t=0
         graph_params = parameters_to_vector(self.gnn.parameters())
+        if self.baseline == 0:
+            tr_params = parameters_to_vector(self.transformer.parameters())
+        
         device = torch.device("cuda:" + str(self.device)) if torch.cuda.is_available() else torch.device("cpu")
         
         for test_task in range(self.test_tasks):
@@ -308,19 +327,17 @@ class GNNTR(nn.Module):
                     
                     if self.baseline == 0:
                         
-                        with torch.no_grad():
-                            val_logit, emb = self.transformer(self.gnn.pool(emb, batch.batch))
-                        
+                        val_logit, emb = self.transformer(self.gnn.pool(emb, batch.batch))
                         loss_tr = self.loss_transformer(F.sigmoid(val_logit).double(), y.to(torch.float64))
-                        loss_logits += torch.sum(loss_tr)/val_logit.size(dim=0)
-                          
-                    del graph_pred, emb
-                    
+                        loss_logits += torch.sum(loss_tr)/val_logit.size(dim=0)   
+                        
                 updated_grad, updated_params = self.update_graph_params(graph_loss, lr_update = self.lr_update)
                 vector_to_parameters(updated_params, self.gnn.parameters())
-            
-            torch.cuda.empty_cache()
-            
+                
+                if self.baseline == 0:
+                    updated_grad_tr, updated_tr_params = self.update_tr_params(loss_logits, lr_update = self.lr_update)
+                    vector_to_parameters(updated_tr_params, self.transformer.parameters())
+                                        
             nodes=[]
             labels=[]
             y_label = []
@@ -340,21 +357,13 @@ class GNNTR(nn.Module):
                 print(F.sigmoid(logit))
           
                 pred = parse_pred(logit)
-                
-                emb_tsne = emb.cpu().detach().numpy() 
-                y_tsne = batch.y.view(pred.shape).cpu().detach().numpy()
-               
-                for i in emb_tsne:
-                    nodes.append(i)
-                for j in y_tsne:
-                    labels.append(j)
-                
+                           
                 y_pred.append(pred)   
-                
-            #t = plot_tsne(nodes, labels, t)
              
             roc_scores, f1_scores, p_scores, sn_scores, sp_scores, acc_scores, bacc_scores  = roc_accuracy(roc_scores, f1_scores, p_scores, sn_scores, sp_scores, acc_scores, bacc_scores, y_label, y_pred)
             
             vector_to_parameters(graph_params, self.gnn.parameters())
+            if self.baseline == 0:
+                vector_to_parameters(tr_params, self.transformer.parameters())
         
         return [roc_scores, f1_scores, p_scores, sn_scores, sp_scores, acc_scores, bacc_scores], self.gnn.state_dict(), self.transformer.state_dict(), self.opt.state_dict(), self.meta_opt.state_dict()

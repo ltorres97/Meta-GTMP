@@ -87,8 +87,10 @@ class Transformer(nn.Module):
         return x
 
 class TR(nn.Module):
-    def __init__(self, emb_size, patch_size, num_classes, dim, depth, heads, mlp_dim, channels = 1, dim_head = 64):
+    def __init__(self, emb_size, patch_size, num_classes, dim, depth, heads, mlp_dim, batch_size = 10, channels = 1, dim_head = 64):
         super().__init__()
+        
+        self.batch_size = batch_size
         emb_height, emb_width = pair(emb_size)
         patch_height, patch_width = pair(patch_size)
 
@@ -107,11 +109,12 @@ class TR(nn.Module):
             nn.LayerNorm(dim),
             nn.Linear(dim, num_classes)
         )
+        
 
     def forward(self, emb):
         *_, h, w, dtype = *emb.shape, emb.dtype
         
-        emb = emb.reshape(10,1,300,1)
+        emb = emb.reshape(self.batch_size,1,300,1)
         
         h = self.to_patch_embedding(emb)
         pe = position_emb(h)
