@@ -47,7 +47,8 @@ We used the following Python packages for core development. We tested on Python 
 - matplotlib = 3.4.3 
 - pandas = 1.5.3 
 - networkx =  3.1.0
-- rdkit = 2022.03.5 
+- rdkit = 2022.03.5
+
 ## References
 
 [1] Hu, W., Liu, B., Gomes, J., Zitnik, M., Liang, P., Pande, V., Leskovec, J.: Strategies for pre-training graph neural networks. CoRR abs/1905.12265 (2020). https://doi.org/10.48550/ARXIV.1905.12265
