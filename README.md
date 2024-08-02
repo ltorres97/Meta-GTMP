@@ -2,15 +2,17 @@
 
 In this work, we introduce a few-shot GNN-Transformer, Meta-GTMP to predict the mutagenicity of a small amount of labeled molecules based on the results achieved for each individual strain involved in the Ames test. A two-module multi-task meta-learning framework combines the information of multiple mutagenic properties across few-shot tasks to leverage the complementarity among individual strains to model the overall Ames mutagenicity test result with limited available data. 
 
-First, a GNN treats molecules as a set of node and edge features converted into graph embeddings by neighborhood aggregation. Then, a Transformer encoder preserves the global information in these vectorial embeddings to propagate deep representations across attention layers. The long-range dependencies captured express the global-semantic structure of molecular embeddings as a function to predict mutagenic properties in small drug repositories. It is demonstrated that this hybrid approach achieves a superior performance when predicting the overall Ames mutagenicity result over standard graph-based methods.
+First, a GNN treats molecules as a set of node and edge features converted into graph embeddings by neighborhood aggregation. Then, a Transformer encoder preserves the global information in these vectorial embeddings to propagate deep representations across attention layers. The long-range dependencies captured express the global-semantic structure of molecular embeddings as a function to predict mutagenic properties in small drug repositories. It is demonstrated that this hybrid approach achieves a superior performance when predicting the overall Ames mutagenicity result over the standard graph-based methods.
 
 ![ScreenShot](figures/gnntr.png?raw=true)
 
-To address the challenge of low-data, we introduce a two-module meta-learning framework to quickly update model parameters across few-shot tasks for each individual strain involved in the Ames test to predict the overall Ames result with limited data.
+To address the challenge of low-data, we introduce a two-module meta-learning framework to quickly update model parameters across few-shot tasks for each individual bacterail strain involved in the Ames test to predict the overall Ames result with just a few laeled compounds. Few-shot experiments in the 5-shot and 10-shot settings show that the proposed Meta-GTMP model significantly outperforms the graph-based baselines in Ames mutagenicity prediction.
 
 ![ScreenShot](figures/meta.png?raw=true)
 
-Few-shot experiments show that the proposed Meta-GTMP model significantly outperforms the graph-based baselines in Ames mutagenicity prediction.
+Laboratory experiments are conducted using six selected compounds with a diverse range of chemical structures and unknown mutagenicity labels. This experimental validation step confirmed that Meta-GTMP effectively recognizes the mutagenic and non-mutagenic samples, while achieving interpretable results using a node-edge attribute masking strategy. In this interpretability study, we compute a set of node and edge scores for each atom and chemical bond in a molecule, providing important insights into the key chemical substructures influencing mutagenicity. These findings support the superior utility of the Meta-GTMP framework for drug discovery and mutagenicity assessments.
+
+![ScreenShot](figures/node-edge-mask.png?raw=true)
 
 This repository provides the source code and datasets for the proposed work.
 
