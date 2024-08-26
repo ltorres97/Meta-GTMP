@@ -65,9 +65,21 @@ We used the following Python packages for core development. We tested on Python 
   year={2020},
   url={https://openreview.net/forum?id=HJlWWJSFDH}
 }
+```
+
+[2] Finn, C., Abbeel, P., Levine, S.: Model-agnostic meta-learning for fast adaptation of deep networks. In: 34th International Conference on Machine Learning, ICML 2017, vol. 3 (2017). https://doi.org/10.48550/arXiv.1703.03400
 
 ```
-[2] Romualdo Benigni, Chiara Laura Battistelli, Cecilia Bossa,
+@article{finn17maml,
+  author    = {Chelsea Finn and Pieter Abbeel and Sergey Levine},
+  title     = {{Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks}},
+  journal   = {International Conference on Machine Learning (ICML)},
+  year      = {2017},
+  url       = {http://arxiv.org/abs/1703.03400}
+}
+```
+
+[3] Romualdo Benigni, Chiara Laura Battistelli, Cecilia Bossa,
 Olga Tcheremenskaia, and Pierre Crettaz. Istituto
 superiore di sanit`a: Isstox chemical toxicity databases,
 2019. https://doi.org/10.1093/mutage/get016
@@ -81,7 +93,7 @@ superiore di sanit`a: Isstox chemical toxicity databases,
 }
 
 ```
-[3] Vision Transformers with PyTorch. https://github.com/lucidrains/vit-pytorch
+[4] Vision Transformers with PyTorch. https://github.com/lucidrains/vit-pytorch
 
 ```
 @misc{Phil Wang,
