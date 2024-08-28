@@ -104,6 +104,4 @@ superiore di sanit`a: Isstox chemical toxicity databases,
   howpublished = {\url{https://github.com/lucidrains/vit-pytorch}}
 }
 
-
-
 ```
