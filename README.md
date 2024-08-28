@@ -6,7 +6,7 @@ First, a GNN treats molecules as a set of node and edge features converted into 
 
 ![ScreenShot](figures/gnntr.png?raw=true)
 
-To address the challenge of low-data, we introduce a two-module meta-learning framework to quickly update model parameters across few-shot tasks for each individual bacterail strain involved in the Ames test to predict the overall Ames result with just a few laeled compounds. Few-shot experiments in the 5-shot and 10-shot settings show that the proposed Meta-GTMP model significantly outperforms the graph-based baselines in Ames mutagenicity prediction.
+To address the challenge of low-data, we introduce a two-module meta-learning framework to quickly update model parameters across few-shot tasks for each individual bacterail strain involved in the Ames test to predict the overall Ames result with just a few labeled compounds. Few-shot experiments in the 5-shot and 10-shot settings show that the proposed Meta-GTMP model significantly outperforms the graph-based baselines in Ames mutagenicity prediction.
 
 ![ScreenShot](figures/meta.png?raw=true)
 
