@@ -24,7 +24,7 @@ The dataset, which includes information on the results of the Ames mutagencity t
 
 Data is pre-processed and transformed into molecular graphs using RDKit.Chem. 
 
-The implementation is based on [Strategies for Pre-training Graph Neural Networks (Hu et al.) (2020)](https://arxiv.org/abs/1905.12265).
+The implementation and pre-trained models are based on [Strategies for Pre-training Graph Neural Networks (Hu et al.) (2020)](https://arxiv.org/abs/1905.12265).
 
 ## Python Packages
 
