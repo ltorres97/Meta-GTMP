@@ -541,7 +541,7 @@ class GNNTR_eval(nn.Module):
                  
                  pred_string = ['Mutagenic' if x[0] == 1 else 'Non-Mutagenic' for x in parse_pred(original_preds).tolist()]
 
-                 output = {"\n" + batch2[i]: pred_string[i] + "\nProb. Mutagenic:" + str(F.sigmoid(original_preds).tolist()[i])[1:-1] + "\n" for i in range(len(batch2))}
+                 output = {"\n" + batch2[i]: pred_string[i] + "\nProb. Mutagenic:" + str(F.sigmoid(original_preds).tolist()[i][0]) + "\nProb. Non-Mutagenic:" + str(1 - F.sigmoid(original_preds).tolist()[i][0]) + "\n" for i in range(len(batch2))}
                  
                  for key, value in output.items():
                      print(f"{key}: {value}")
