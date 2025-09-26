@@ -84,6 +84,21 @@ train_model.py and test_model.py: Main scripts used to run the previous scripts 
 
 eval_model.py: Main script to run gnntr_eval.py for computing evaluation metrics across experiments with the trained models.
 
+### Example Usage:
+
+To train the Meta-GTMP model using 5-shot or 10-shot support sets: edit and run train_model.py
+
+To test the trained models and compute performance metrics: edit and run eval_model.py
+
+To generate substructure importance scores using the masking strategy: edit and run eval_model.py
+
+To run baseline ML models: ml-baselines.py
+
+All necessary model checkpoints will be saved in the checkpoints/ directory, and results will be stored in results-exp/.
+
+Ensure that the Data/ directory contains the preprocessed ISSSTY dataset. You may modify the file paths or arguments in data.py and other scripts if needed.
+
+
 ## References
 
 [1] Hu, W., Liu, B., Gomes, J., Zitnik, M., Liang, P., Pande, V., Leskovec, J.: Strategies for pre-training graph neural networks. CoRR abs/1905.12265 (2020). https://doi.org/10.48550/ARXIV.1905.12265
