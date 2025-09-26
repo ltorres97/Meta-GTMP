@@ -52,6 +52,38 @@ We used the following Python packages for core development. We tested on Python 
 
 ```
 
+## Running the Code
+
+This section provides an overview of the main scripts included in the repository and instructions for executing them.
+
+### Meta-GTMP (Few-Shot GNN-Transformer):
+
+gnntr_train.py: Performs meta-training using 5-shot or 10-shot support sets. This trains the GNN + Transformer model on strain-specific few-shot tasks using the ISSSTY dataset.
+
+gnntr_test.py: Performs meta-testing to evaluate the trained model on the overall Ames mutagenicity classification task.
+
+gnntr_eval.py: Evaluates the model’s performance on disjoint query sets, computing metrics such as ROC-AUC, accuracy, sensitivity, precision, and F1-score.
+
+gnntr_mask.py: Executes the interpretability pipeline using the node-edge masking strategy to highlight substructures most relevant to mutagenicity or non-mutagenicity.
+
+mask_model.py: Defines the masking model used for interpretability analysis in conjunction with gnntr_mask.py.
+
+### Classical Machine Learning Baselines:
+
+ml-baselines.py: Trains and evaluates baseline machine learning models (Random Forest, SVM, KNN, Gaussian Process) using molecular fingerprints (ECFP4 and MACCS) for overall Ames label prediction. Used for performance comparison with the proposed model.
+
+### Utilities and Helper Scripts:
+
+data.py: Handles data loading and preprocessing. Converts SMILES into molecular graphs using RDKit and PyTorch Geometric.
+
+gnn_models.py: Defines several GNN architectures including Graph Isomorphism Networks (GIN).
+
+gnn_tr.py: Defines the hybrid GNN + Transformer model architecture used in the Meta-GTMP framework.
+
+train_model.py and test_model.py: Main scripts used to run the previous scripts gnntr_train.py, gnntr_test.py for training and evaluation.
+
+eval_model.py: Main script to run gnntr_eval.py for computing evaluation metrics across experiments with the trained models.
+
 ## References
 
 [1] Hu, W., Liu, B., Gomes, J., Zitnik, M., Liang, P., Pande, V., Leskovec, J.: Strategies for pre-training graph neural networks. CoRR abs/1905.12265 (2020). https://doi.org/10.48550/ARXIV.1905.12265
