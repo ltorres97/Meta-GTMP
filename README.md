@@ -70,7 +70,7 @@ mask_model.py: Defines the masking model used for interpretability analysis in c
 
 ### Classical Machine Learning Baselines:
 
-ml-baselines.py: Trains and evaluates baseline machine learning models (Random Forest, SVM, KNN, Gaussian Process) using molecular fingerprints (ECFP4 and MACCS) for overall Ames label prediction. Used for performance comparison with the proposed model.
+ml-baselines.py: Trains and evaluates baseline machine learning models (Random Forest, SVM, KNN, Gaussian Process) using molecular fingerprints for overall Ames mutagenicity prediction. Used for performance comparison with the proposed model.
 
 ### Utilities and Helper Scripts:
 
